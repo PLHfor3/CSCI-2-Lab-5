@@ -4,24 +4,19 @@ import re
 
 
 def main():
-    while True:
-        try:
-            create_output_file(get_input_file_name())
-        except NameError as e:
-            print(e)
-        else:
-            print("Data Stored!")
-            break
+    create_output_file(get_input_file_name())
+    print("Data Stored!")
 
 
 def get_input_file_name():
-    inputString = ""
-    print("Input file name: ", end="")
-    inputString = input("").strip()
-    if not os.path.isfile(f"files\\{inputString}"):
-        raise NameError("File does not exist!")
-    else:
-        return inputString
+    while True:
+        print("Input file name: ", end="")
+        try:
+            inputString = input("").strip()
+            file = open(f"files\\{inputString}", 'r')
+            return file
+        except:
+            print("File does not exist!")
 
 
 def check_if_output_file_already_exists(fileName):
@@ -30,35 +25,37 @@ def check_if_output_file_already_exists(fileName):
     return False
 
 
-def create_output_file(inputFileName):
-    outputFileName = input("Output File name: ")
+def create_output_file(inputFile):
+    outputFileName = input("Output File name: ").strip()
     if check_if_output_file_already_exists(outputFileName):
-        duplicate_file_handler(inputFileName)
+        duplicate_file_handler(inputFile, outputFileName)
     else:
-        prepare_to_write_to_output(inputFileName, outputFileName)
+        prepare_to_write_to_output(inputFile, outputFileName)
 
 
-def duplicate_file_handler(inputFileName):
+def duplicate_file_handler(inputFile, outputFileName):
     overwriteFileSelection = input("Overwrite existing file (y/n): ").strip().lower()
     while True:
         if overwriteFileSelection == "y":
-            prepare_to_write_to_output(inputFileName, outputFileName)
+            prepare_to_write_to_output(inputFile, outputFileName)
             break
         elif overwriteFileSelection == "n":
-            outputFileName = input("New output file name: ")
+            outputFileName = input("New output file name: ").strip()
             if not check_if_output_file_already_exists(outputFileName):
-                prepare_to_write_to_output(inputFileName, outputFileName)
+                prepare_to_write_to_output(inputFile, outputFileName)
                 break
             overwriteFileSelection = input("Overwrite existing file (y/n): ").strip().lower()
         else:
-            overwriteFileSelection = input("Enter (y/n) ")
+            overwriteFileSelection = input("Enter (y/n) ").strip().lower()
 
 
-def prepare_to_write_to_output(inputFileName, outputFileName):
-    listOfEmails = read_input_from_file(inputFileName, '^From: ')
-    listOfTimeValues = read_input_from_file(inputFileName, 'X-DSPAM-Processed: ')
-    listOfConfidenceValues = read_input_from_file(inputFileName, 'X-DSPAM-Confidence: ')
+def prepare_to_write_to_output(inputFile, outputFileName):
+    fileLines = inputFile.readlines()
+    listOfEmails = read_input_from_file(fileLines, '^From: ')
+    listOfTimeValues = read_input_from_file(fileLines, 'X-DSPAM-Processed: ')
+    listOfConfidenceValues = read_input_from_file(fileLines, 'X-DSPAM-Confidence: ')
     write_output_to_file(listOfEmails, listOfTimeValues, listOfConfidenceValues, outputFileName)
+    inputFile.close()
 
 
 def write_output_to_file(emailList, timeList, confidenceList, fileName):
@@ -79,14 +76,11 @@ def write_output_to_file(emailList, timeList, confidenceList, fileName):
         content.writerow(['', "Average", f'{confidenceAverage:.4f}'])
 
 
-def read_input_from_file(fileName, regexPattern):
-    file = open(f"files\\{fileName}", 'r')
-    inputFileLines = file.readlines()
+def read_input_from_file(fileLines, regexPattern):
     lineList = list()
-    for line in inputFileLines:
+    for line in fileLines:
         if (re.search(regexPattern, line)):
             lineList.append(line)
-    file.close()
     return lineList
 
 
